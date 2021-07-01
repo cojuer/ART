@@ -1,4 +1,4 @@
-use iced::{image, svg, Svg};
+use iced::{svg, Svg};
 use lazy_static::lazy_static;
 
 lazy_static! {

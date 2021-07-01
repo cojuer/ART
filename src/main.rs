@@ -322,7 +322,7 @@ impl Application for App {
                     .push(
                         Button::new(&mut self.start_button, Text::new("Start").horizontal_alignment(iced::HorizontalAlignment::Center)).on_press(Message::Start)
                             .width(Length::Units(220))
-                            .style(style::ButtonStyle)
+                            .style(style::StartButton)
                     )
                     .spacing(10)
                     .padding(10)
@@ -380,7 +380,7 @@ impl Application for App {
             .height(Length::Fill)
             .center_x()
             .center_y()
-            .style(style::Theme::Dark)
+            .style(style::BackContainer)
             .into()
 
     }
