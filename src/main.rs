@@ -9,7 +9,8 @@ use rand::seq::SliceRandom;
 use iced::Command;
 use iced::{
     button, Align, Button, Column, Element, Application, Settings, Text, image, Row, Container, 
-    Length, Subscription, executor, Clipboard, text_input, pick_list, PickList, TextInput
+    Length, Subscription, executor, Clipboard, text_input, pick_list, PickList, TextInput,
+    HorizontalAlignment,
 };
 use std::collections::HashSet;
 use nfd::Response;
@@ -291,12 +292,27 @@ impl Application for App {
                     )};
                 // let folder_char_vec = self.folder_path.chars().collect::<Vec<_>>();
                 // let short_folder = if folder_char_vec.len() < 15 {self.folder_path.clone()} else {folder_char_vec[0..14].iter().cloned().collect::<String>() + ".."};              
-                let pick_list = PickList::new(&mut self.pick_list,&ImageOrder::ALL[..],Some(self.selected_order), Message::OrderSelected);
+                let pick_list = PickList::new(
+                    &mut self.pick_list,&ImageOrder::ALL[..],
+                    Some(self.selected_order), Message::OrderSelected
+                ).style(style::MenuPickList);
                 Column::new()
                     .push(Text::new(&self.error))
-                    .push(Button::new(&mut self.load_button, Text::new("Choose folder")).on_press(Message::Load).width(Length::Units(220)))
-                    .push(Text::new(String::from("Chosen: ") + &folder_name).size(15).horizontal_alignment(iced::HorizontalAlignment::Center).width(Length::Units(220)))
-                    .push(Text::new(self.image_paths.len().to_string() + " images found").size(15).horizontal_alignment(iced::HorizontalAlignment::Center).width(Length::Units(220)))                    
+                    .push(Column::new()
+                        .push(
+                            Button::new(
+                                &mut self.load_button, 
+                                Text::new("Choose folder")
+                                    .horizontal_alignment(HorizontalAlignment::Center)
+                            )
+                                .on_press(Message::Load)
+                                .style(style::EdgyButton)
+                                .width(Length::Units(220))
+                        )
+                        .push(Text::new(String::from("Chosen: ") + &folder_name).size(15).horizontal_alignment(iced::HorizontalAlignment::Center).width(Length::Units(220)))
+                        .push(Text::new(self.image_paths.len().to_string() + " images found").size(15).horizontal_alignment(iced::HorizontalAlignment::Center).width(Length::Units(220)))
+                        .spacing(2)
+                    )
                     .push(
                          TextInput::new(
                             &mut self.secs,
@@ -304,6 +320,7 @@ impl Application for App {
                             &self.input_data,
                             Message::RoundSizeEdited,
                         )
+                        .style(style::MenuInput)
                         .width(Length::Units(210)).padding(5)
                     )
                     .push(
@@ -314,7 +331,7 @@ impl Application for App {
                             .align_items(Align::Center)
                     )
                     .push(
-                        Button::new(&mut self.start_button, Text::new("Start").horizontal_alignment(iced::HorizontalAlignment::Center)).on_press(Message::Start)
+                        Button::new(&mut self.start_button, Text::new("Start").size(25).horizontal_alignment(iced::HorizontalAlignment::Center)).on_press(Message::Start)
                             .width(Length::Units(220))
                             .style(style::StartButton)
                     )
