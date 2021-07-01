@@ -9,7 +9,7 @@ use rand::seq::SliceRandom;
 use iced::Command;
 use iced::{
     button, Align, Button, Column, Element, Application, Settings, Text, image, Row, Container, 
-    Length, Subscription, executor, Clipboard, text_input, Checkbox, pick_list, PickList, TextInput
+    Length, Subscription, executor, Clipboard, text_input, pick_list, PickList, TextInput
 };
 use std::collections::HashSet;
 use nfd::Response;
@@ -39,7 +39,6 @@ struct App {
 
     secs: text_input::State,
     seconds: usize,
-    enable_rounds: bool,
     pick_list: pick_list::State<ImageOrder>,
     selected_order: ImageOrder,
     running: bool,
@@ -65,9 +64,7 @@ impl Default for App {
             start_button: button::State::default(),
             reset_button: button::State::default(),
             menu_button: button::State::default(),
-
             secs: text_input::State::default(),
-            enable_rounds: true,
             pick_list: pick_list::State::<ImageOrder>::default(),
             selected_order: ImageOrder::default(),
             running: bool::default(),
@@ -97,7 +94,6 @@ enum Message {
     PrevImage,
     NextImage,
     Tick(Instant),
-    EnableRounds(bool),
     OrderSelected(ImageOrder),
     ChangeTimerState,
     ResetTimer,
@@ -241,7 +237,6 @@ impl Application for App {
                 }
             }
             Message::ResetTimer => { self.duration = self.default_duration }
-            Message::EnableRounds(value) => { self.enable_rounds = value }
             Message::ChangeTimerState => {
                 self.running = !self.running;
                 self.last_tick = Instant::now();
@@ -274,7 +269,7 @@ impl Application for App {
     fn subscription(&self) -> Subscription<Message> {
         match &self.state {
             AppState::ShowImage{..} => {
-                if self.enable_rounds && self.running {
+                if self.running {
                     iced::time::every(Duration::from_millis(200))
                         .map(Message::Tick)
                 } else {
@@ -302,7 +297,6 @@ impl Application for App {
                     .push(Button::new(&mut self.load_button, Text::new("Choose folder")).on_press(Message::Load).width(Length::Units(220)))
                     .push(Text::new(String::from("Chosen: ") + &folder_name).size(15).horizontal_alignment(iced::HorizontalAlignment::Center).width(Length::Units(220)))
                     .push(Text::new(self.image_paths.len().to_string() + " images found").size(15).horizontal_alignment(iced::HorizontalAlignment::Center).width(Length::Units(220)))                    
-                    .push(Checkbox::new(self.enable_rounds,"Enable rounds",Message::EnableRounds))
                     .push(
                          TextInput::new(
                             &mut self.secs,
