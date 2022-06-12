@@ -8,9 +8,9 @@ use rand::thread_rng;
 use rand::seq::SliceRandom;
 use iced::Command;
 use iced::{
-    button, Align, Button, Column, Element, Application, Settings, Text, image, Row, Container, 
-    Length, Subscription, executor, Clipboard, text_input, pick_list, PickList, TextInput,
-    HorizontalAlignment,
+    button, Alignment, Button, Column, Element, Application, Settings, Text, image, Row, Container, 
+    Length, Subscription, executor, text_input, pick_list, PickList, TextInput,
+    alignment
 };
 use std::collections::HashSet;
 use nfd::Response;
@@ -148,7 +148,7 @@ impl Application for App {
         String::from("Art Reference Tool")
     }
 
-    fn update(&mut self, message: Message,_clipboard: &mut Clipboard) -> Command<Message> {
+    fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::Load => {
                 let result = nfd::open_pick_folder(None).unwrap_or_else(|e| {
@@ -303,14 +303,14 @@ impl Application for App {
                             Button::new(
                                 &mut self.load_button, 
                                 Text::new("Choose folder")
-                                    .horizontal_alignment(HorizontalAlignment::Center)
+                                    .horizontal_alignment(alignment::Horizontal::Center)
                             )
                                 .on_press(Message::Load)
                                 .style(style::EdgyButton)
                                 .width(Length::Units(220))
                         )
-                        .push(Text::new(String::from("Chosen: ") + &folder_name).size(15).horizontal_alignment(iced::HorizontalAlignment::Center).width(Length::Units(220)))
-                        .push(Text::new(self.image_paths.len().to_string() + " images found").size(15).horizontal_alignment(iced::HorizontalAlignment::Center).width(Length::Units(220)))
+                        .push(Text::new(String::from("Chosen: ") + &folder_name).size(15).horizontal_alignment(alignment::Horizontal::Center).width(Length::Units(220)))
+                        .push(Text::new(self.image_paths.len().to_string() + " images found").size(15).horizontal_alignment(alignment::Horizontal::Center).width(Length::Units(220)))
                         .spacing(2)
                     )
                     .push(
@@ -328,16 +328,16 @@ impl Application for App {
                             .push(Text::new("Sort by"))
                             .push(pick_list)
                             .spacing(10)
-                            .align_items(Align::Center)
+                            .align_items(Alignment::Center)
                     )
                     .push(
-                        Button::new(&mut self.start_button, Text::new("Start").size(25).horizontal_alignment(iced::HorizontalAlignment::Center)).on_press(Message::Start)
+                        Button::new(&mut self.start_button, Text::new("Start").size(25).horizontal_alignment(alignment::Horizontal::Center)).on_press(Message::Start)
                             .width(Length::Units(220))
                             .style(style::StartButton)
                     )
                     .spacing(10)
                     .padding(10)
-                    .align_items(Align::Start)
+                    .align_items(Alignment::Start)
             }
             AppState::ShowImage { ref mut canvas } => {
                 const MINUTE: u64 = 60;
@@ -380,7 +380,7 @@ impl Application for App {
                         .spacing(5)
                         .padding(10)
                         .width(Length::Fill)
-                        .align_items(Align::Center)
+                        .align_items(Alignment::Center)
                     )
                     
             }
@@ -415,7 +415,7 @@ impl Canvas {
                 .width(Length::Fill)
             )
             .height(Length::Fill)
-            .align_items(Align::Center)
+            .align_items(Alignment::Center)
             .into()
     }
 
