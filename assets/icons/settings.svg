@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   class="icon icon-tabler icon-tabler-player-play"
+   class="icon icon-tabler icon-tabler-settings"
    width="24"
    height="24"
    viewBox="0 0 24 24"
@@ -10,17 +10,17 @@
    stroke-linecap="round"
    stroke-linejoin="round"
    version="1.1"
-   id="svg5316"
-   sodipodi:docname="tabler-icon-player-play.svg"
+   id="svg17526"
+   sodipodi:docname="settings.svg"
    inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <defs
-     id="defs5320" />
+     id="defs17530" />
   <sodipodi:namedview
-     id="namedview5318"
+     id="namedview17528"
      pagecolor="#ffffff"
      bordercolor="#000000"
      borderopacity="0.25"
@@ -37,14 +37,18 @@
      inkscape:window-x="2391"
      inkscape:window-y="-9"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg5316" />
+     inkscape:current-layer="svg17526" />
   <path
      stroke="none"
      d="M0 0h24v24H0z"
      fill="none"
-     id="path5312" />
+     id="path17520" />
   <path
-     d="M7 4v16l13 -8z"
-     id="path5314"
+     d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"
+     id="path17522"
+     style="stroke:#cccccc;stroke-opacity:1" />
+  <path
+     d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"
+     id="path17524"
      style="stroke:#cccccc;stroke-opacity:1" />
 </svg>

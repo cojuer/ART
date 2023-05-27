@@ -1,25 +1,37 @@
-use std::fs;
-use std::ffi::OsStr;
-use std::path::PathBuf;
-use std::str::FromStr;
-use std::time::Instant;
-use std::time::{Duration};
-use rand::thread_rng;
-use rand::seq::SliceRandom;
+use iced::theme::Theme;
 use iced::Command;
 use iced::{
-    button, Alignment, Button, Column, Element, Application, Settings, Text, image, Row, Container, 
-    Length, Subscription, executor, text_input, pick_list, PickList, TextInput,
-    alignment
+    alignment, executor,
+    widget::{button, image, pick_list, svg, text_input, Column, Container, Row, Text},
+    window, Alignment, Application, Element, Length, Settings, Subscription,
 };
-use std::collections::HashSet;
 use nfd::Response;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+use std::collections::HashSet;
+use std::ffi::OsStr;
+use std::fs;
+use std::path::PathBuf;
+use std::rc::Rc;
+use std::str::FromStr;
+use std::time::Duration;
+use std::time::Instant;
 
-mod style;
 mod icons;
+mod style;
 
 pub fn main() -> iced::Result {
-    App::run(Settings::default())
+    App::run(Settings {
+        window: window::Settings {
+            icon: window::icon::from_file_data(
+                include_bytes!("../assets/icons/clock-hour-3.png"),
+                None,
+            )
+            .ok(),
+            ..window::Settings::default()
+        },
+        ..Settings::default()
+    })
 }
 
 struct App {
@@ -28,19 +40,8 @@ struct App {
     folder_path: String,
     image_paths: Vec<std::path::PathBuf>,
     image_num: usize,
-    
-    load_button: button::State,
-    
-    prev_button: button::State,
-    next_button: button::State,
-    run_button: button::State,
-    start_button: button::State,
-    reset_button: button::State,
-    menu_button: button::State,
 
-    secs: text_input::State,
     seconds: usize,
-    pick_list: pick_list::State<ImageOrder>,
     selected_order: ImageOrder,
     running: bool,
     duration: Duration,
@@ -58,15 +59,6 @@ impl Default for App {
             folder_path: String::default(),
             image_paths: Vec::<std::path::PathBuf>::default(),
             image_num: usize::default(),
-            load_button: button::State::default(),
-            prev_button: button::State::default(),
-            next_button: button::State::default(),
-            run_button: button::State::default(),
-            start_button: button::State::default(),
-            reset_button: button::State::default(),
-            menu_button: button::State::default(),
-            secs: text_input::State::default(),
-            pick_list: pick_list::State::<ImageOrder>::default(),
             selected_order: ImageOrder::default(),
             running: bool::default(),
             duration: Duration::default(),
@@ -79,14 +71,14 @@ impl Default for App {
 }
 
 enum AppState {
-    Test, 
-    ShowImage {
-        canvas: Canvas
-    }
+    Test,
+    ShowImage { canvas: Canvas },
 }
 
 impl Default for AppState {
-    fn default() -> Self { AppState::Test }
+    fn default() -> Self {
+        AppState::Test
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -110,10 +102,7 @@ pub enum ImageOrder {
 }
 
 impl ImageOrder {
-    const ALL: [ImageOrder; 2] = [
-        ImageOrder::Name,
-        ImageOrder::Random,
-    ];
+    const ALL: [ImageOrder; 2] = [ImageOrder::Name, ImageOrder::Random];
 }
 
 impl Default for ImageOrder {
@@ -139,6 +128,7 @@ impl Application for App {
     type Message = Message;
     type Executor = executor::Default;
     type Flags = ();
+    type Theme = Theme;
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
         (Self::default(), Command::none())
@@ -155,16 +145,20 @@ impl Application for App {
                     panic!("{}", e);
                 });
                 if let Response::Okay(file_path) = result {
-                    self.folder_path = file_path; 
+                    self.folder_path = file_path;
                 }
                 let extensions: HashSet<_> = ["jpg", "jpeg", "png"].iter().cloned().collect();
-                self.image_paths = fs::read_dir(&self.folder_path).unwrap() // TODO: handle error
+                self.image_paths = fs::read_dir(&self.folder_path)
+                    .unwrap() // TODO: handle error
                     .into_iter()
                     .map(|x| x.map(|entry| entry.path()))
                     .filter_map(|x| x.ok())
                     .filter(|x| x.extension().is_some())
                     .filter(|x| extensions.contains(x.extension().and_then(OsStr::to_str).unwrap()))
                     .collect();
+                if self.image_paths.len() != 0 {
+                    self.error = String::new();
+                }
             }
             Message::Start => {
                 if self.seconds != 0 {
@@ -173,19 +167,22 @@ impl Application for App {
                     self.default_duration = Duration::from_secs(30);
                 }
                 match &self.selected_order {
-                    &ImageOrder::Name => {
-                        self.image_paths.sort_by(
-                        |p1, p2| p1.file_name().and_then(OsStr::to_str).unwrap_or("default").cmp(p2.file_name().and_then(OsStr::to_str).unwrap_or("default")))
-                    }
+                    &ImageOrder::Name => self.image_paths.sort_by(|p1, p2| {
+                        p1.file_name()
+                            .and_then(OsStr::to_str)
+                            .unwrap_or("default")
+                            .cmp(p2.file_name().and_then(OsStr::to_str).unwrap_or("default"))
+                    }),
                     &ImageOrder::Random => {
                         self.image_paths.shuffle(&mut thread_rng());
                     }
                 }
                 if self.image_paths.len() != 0 {
-                    self.state = AppState::ShowImage{ canvas: Canvas { 
-                        image: Canvas::fetch_image(&self.image_paths[self.image_num]),
-                        image_viewer: image::viewer::State::new(),
-                    } };
+                    self.state = AppState::ShowImage {
+                        canvas: Canvas {
+                            image: Canvas::fetch_image(&self.image_paths[self.image_num]),
+                        },
+                    };
                     self.running = true;
                     self.duration = self.default_duration;
                     self.last_tick = Instant::now();
@@ -199,10 +196,11 @@ impl Application for App {
                 if self.image_num == self.image_paths.len() {
                     self.image_num = 0;
                 }
-                self.state = AppState::ShowImage{ canvas: Canvas { 
-                    image: Canvas::fetch_image(&self.image_paths[self.image_num]),
-                    image_viewer: image::viewer::State::new(),
-                } };
+                self.state = AppState::ShowImage {
+                    canvas: Canvas {
+                        image: Canvas::fetch_image(&self.image_paths[self.image_num]),
+                    },
+                };
                 self.duration = self.default_duration;
             }
             Message::PrevImage => {
@@ -213,10 +211,11 @@ impl Application for App {
                 } else {
                     self.image_num -= 1
                 }
-                self.state = AppState::ShowImage{ canvas: Canvas { 
-                    image: Canvas::fetch_image(&self.image_paths[self.image_num]),
-                    image_viewer: image::viewer::State::new(),
-                } };
+                self.state = AppState::ShowImage {
+                    canvas: Canvas {
+                        image: Canvas::fetch_image(&self.image_paths[self.image_num]),
+                    },
+                };
                 self.duration = self.default_duration;
             }
             Message::Tick(now) => {
@@ -224,20 +223,20 @@ impl Application for App {
                 self.last_tick = now;
                 if time_elapsed < self.duration {
                     self.duration -= time_elapsed;
-                }
-                else {
-                    self.duration = self.default_duration;   
+                } else {
+                    self.duration = self.default_duration;
                     self.image_num = self.image_num + 1;
                     if self.image_num == self.image_paths.len() {
                         self.image_num = 0;
                     }
-                    self.state = AppState::ShowImage{ canvas: Canvas { 
-                        image: Canvas::fetch_image(&self.image_paths[self.image_num]),
-                        image_viewer: image::viewer::State::new(),
-                    } }
+                    self.state = AppState::ShowImage {
+                        canvas: Canvas {
+                            image: Canvas::fetch_image(&self.image_paths[self.image_num]),
+                        },
+                    }
                 }
             }
-            Message::ResetTimer => { self.duration = self.default_duration }
+            Message::ResetTimer => self.duration = self.default_duration,
             Message::ChangeTimerState => {
                 self.running = !self.running;
                 self.last_tick = Instant::now();
@@ -246,7 +245,9 @@ impl Application for App {
                 self.state = AppState::Test;
                 self.image_num = 0;
             }
-            Message::OrderSelected(order) => { self.selected_order = order; }
+            Message::OrderSelected(order) => {
+                self.selected_order = order;
+            }
             Message::RoundSizeEdited(size_str) => {
                 if size_str.len() == 0 {
                     self.seconds = 0;
@@ -261,90 +262,118 @@ impl Application for App {
                     }
                 }
             }
-            _ => {
-            }
         }
         Command::none()
     }
 
     fn subscription(&self) -> Subscription<Message> {
         match &self.state {
-            AppState::ShowImage{..} => {
+            AppState::ShowImage { .. } => {
                 if self.running {
-                    iced::time::every(Duration::from_millis(200))
-                        .map(Message::Tick)
+                    iced::time::every(Duration::from_millis(200)).map(Message::Tick)
                 } else {
                     Subscription::none()
                 }
             }
-            _ => Subscription::none()
+            _ => Subscription::none(),
         }
     }
 
-    fn view(&mut self) -> Element<Message> {
+    fn view(&self) -> Element<Message> {
         let content = match self.state {
-            AppState::Test => {  
-                let folder_name = if self.folder_path.is_empty() {self.folder_path.clone()} else 
-                    {String::from(PathBuf::from_str(&self.folder_path)
-                        .unwrap().file_name()
-                        .unwrap().to_str()
-                        .unwrap()
-                    )};
+            AppState::Test => {
+                let folder_name = if self.folder_path.is_empty() {
+                    self.folder_path.clone()
+                } else {
+                    String::from(
+                        PathBuf::from_str(&self.folder_path)
+                            .unwrap()
+                            .file_name()
+                            .unwrap()
+                            .to_str()
+                            .unwrap(),
+                    )
+                };
                 // let folder_char_vec = self.folder_path.chars().collect::<Vec<_>>();
-                // let short_folder = if folder_char_vec.len() < 15 {self.folder_path.clone()} else {folder_char_vec[0..14].iter().cloned().collect::<String>() + ".."};              
-                let pick_list = PickList::new(
-                    &mut self.pick_list,&ImageOrder::ALL[..],
-                    Some(self.selected_order), Message::OrderSelected
-                ).style(style::MenuPickList);
+                // let short_folder = if folder_char_vec.len() < 15 {self.folder_path.clone()} else {folder_char_vec[0..14].iter().cloned().collect::<String>() + ".."};
+                let pick_list = pick_list(
+                    &ImageOrder::ALL[..],
+                    Some(self.selected_order),
+                    Message::OrderSelected,
+                )
+                .style(iced::theme::PickList::Custom(
+                    Rc::new(style::MenuPickList),
+                    Rc::new(style::MenuPickList),
+                ));
                 Column::new()
-                    .push(Text::new(&self.error))
-                    .push(Column::new()
-                        .push(
-                            Button::new(
-                                &mut self.load_button, 
-                                Text::new("Choose folder")
-                                    .horizontal_alignment(alignment::Horizontal::Center)
-                            )
-                                .on_press(Message::Load)
-                                .style(style::EdgyButton)
-                                .width(Length::Units(220))
-                        )
-                        .push(Text::new(String::from("Chosen: ") + &folder_name).size(15).horizontal_alignment(alignment::Horizontal::Center).width(Length::Units(220)))
-                        .push(Text::new(self.image_paths.len().to_string() + " images found").size(15).horizontal_alignment(alignment::Horizontal::Center).width(Length::Units(220)))
-                        .spacing(2)
+                    .push(
+                        Text::new(&self.error)
+                            .width(220)
+                            .height(20)
+                            .horizontal_alignment(alignment::Horizontal::Center),
                     )
                     .push(
-                         TextInput::new(
-                            &mut self.secs,
-                            " secs per round (def. 30)",
-                            &self.input_data,
-                            Message::RoundSizeEdited,
-                        )
-                        .style(style::MenuInput)
-                        .width(Length::Units(210)).padding(5)
+                        Column::new()
+                            .push(
+                                button(
+                                    Text::new("Choose folder")
+                                        .horizontal_alignment(alignment::Horizontal::Center),
+                                )
+                                .on_press(Message::Load)
+                                .style(iced::theme::Button::Custom(Box::new(style::EdgyButton)))
+                                .width(Length::Fixed(220.0)),
+                            )
+                            .push(Column::new().height(Length::Fixed(5.0)))
+                            .push(
+                                Text::new(String::from("Chosen: ") + &folder_name)
+                                    .size(15)
+                                    .horizontal_alignment(alignment::Horizontal::Center)
+                                    .width(Length::Fixed(220.0)),
+                            )
+                            .push(
+                                Text::new(self.image_paths.len().to_string() + " images found")
+                                    .size(15)
+                                    .horizontal_alignment(alignment::Horizontal::Center)
+                                    .width(Length::Fixed(220.0)),
+                            )
+                            .spacing(2),
+                    )
+                    .push(
+                        text_input(" secs per round (def. 30)", &self.input_data)
+                            .on_input(Message::RoundSizeEdited)
+                            .style(iced::theme::TextInput::Custom(Box::new(style::MenuInput)))
+                            .width(Length::Fixed(220.0))
+                            .padding(5),
                     )
                     .push(
                         Row::new()
+                            .push(Row::new().width(Length::Fixed(10.0)))
                             .push(Text::new("Sort by"))
+                            .push(Row::new().width(Length::Fixed(10.0)))
                             .push(pick_list)
-                            .spacing(10)
-                            .align_items(Alignment::Center)
+                            .align_items(Alignment::Center),
                     )
                     .push(
-                        Button::new(&mut self.start_button, Text::new("Start").size(25).horizontal_alignment(alignment::Horizontal::Center)).on_press(Message::Start)
-                            .width(Length::Units(220))
-                            .style(style::StartButton)
+                        button(
+                            Text::new("Start")
+                                .size(25)
+                                .horizontal_alignment(alignment::Horizontal::Center),
+                        )
+                        .on_press(Message::Start)
+                        .width(Length::Fixed(220.0))
+                        .style(iced::theme::Button::Custom(Box::new(style::StartButton))),
                     )
                     .spacing(10)
                     .padding(10)
                     .align_items(Alignment::Start)
             }
-            AppState::ShowImage { ref mut canvas } => {
+            AppState::ShowImage { ref canvas } => {
                 const MINUTE: u64 = 60;
                 const HOUR: u64 = 60 * MINUTE;
-                
+
                 let mut seconds = self.duration.as_secs();
-                if self.duration != self.default_duration { // do not show full round time as it changes after one tick and it is distracting
+                if self.duration != self.default_duration {
+                    // do not show full round time as it changes after one tick and it is distracting
                     seconds = self.duration.as_secs() + 1; // show x secs when x - 1 secs y millis left, so last second it will show 1 sec and not 0
                 }
 
@@ -352,37 +381,51 @@ impl Application for App {
                     "{:0>2}.{:0>2}",
                     (seconds % HOUR) / MINUTE,
                     seconds % MINUTE,
-                )).width(Length::Units(100)) // static width prevents menu jitter: "11" width differs from width of "12" with default font
-                .size(40);
+                ))
+                // static width prevents menu jitter: default font is not monospaced
+                .width(Length::Fixed(80.0))
+                .size(35);
 
-                Column::new()
-                    .push(canvas.view())
-                    .push(
-                        Row::new()
-                        .push(Button::new(&mut self.menu_button, icons::MENU.clone()).style(style::IconButton).on_press(Message::BackToMenu))
+                Column::new().push(canvas.view()).push(
+                    Row::new()
+                        .push(
+                            button(svg(icons::MENU.clone()))
+                                .style(iced::theme::Button::Custom(Box::new(style::IconButton)))
+                                .on_press(Message::BackToMenu),
+                        )
+                        .push(Row::new().width(Length::Fixed(80.0))) // to balance duration width
                         .push(Row::new().width(Length::Fill))
                         .push(
-                            Button::new(&mut self.prev_button, icons::PREV.clone()).style(style::IconButton).on_press(Message::PrevImage),
+                            button(svg(icons::PREV.clone()))
+                                .style(iced::theme::Button::Custom(Box::new(style::IconButton)))
+                                .on_press(Message::PrevImage),
                         )
                         .push(
-                            Button::new(&mut self.run_button, if self.running {icons::PAUSE.clone()} else {icons::PLAY.clone()})
-                                .style(style::IconButton)
-                                .on_press(Message::ChangeTimerState),
+                            button(if self.running {
+                                svg(icons::PAUSE.clone())
+                            } else {
+                                svg(icons::PLAY.clone())
+                            })
+                            .style(iced::theme::Button::Custom(Box::new(style::IconButton)))
+                            .on_press(Message::ChangeTimerState),
                         )
                         .push(
-                            Button::new(&mut self.next_button, icons::NEXT.clone())
-                                .style(style::IconButton)
+                            button(svg(icons::NEXT.clone()))
+                                .style(iced::theme::Button::Custom(Box::new(style::IconButton)))
                                 .on_press(Message::NextImage),
                         )
                         .push(Row::new().width(Length::Fill))
-                        .push(Button::new(&mut self.reset_button, icons::RESET.clone()).style(style::IconButton).on_press(Message::ResetTimer))
+                        .push(
+                            button(svg(icons::RESET.clone()))
+                                .style(iced::theme::Button::Custom(Box::new(style::IconButton)))
+                                .on_press(Message::ResetTimer),
+                        )
                         .push(duration)
                         .spacing(5)
                         .padding(10)
                         .width(Length::Fill)
-                        .align_items(Alignment::Center)
-                    )
-                    
+                        .align_items(Alignment::Center),
+                )
             }
         };
 
@@ -391,28 +434,25 @@ impl Application for App {
             .height(Length::Fill)
             .center_x()
             .center_y()
-            .style(style::BackContainer)
+            .style(iced::theme::Container::Custom(Box::new(
+                style::BackContainer,
+            )))
             .into()
-
     }
 }
 
 #[derive(Debug, Clone)]
 struct Canvas {
     image: image::Handle,
-    image_viewer: image::viewer::State,
 }
 
 impl Canvas {
-
-    fn view(&mut self) -> Element<Message> {
+    fn view(&self) -> Element<Message> {
         Row::new()
-            .push(image::Viewer::new(
-                &mut self.image_viewer,
-                self.image.clone(),
-                )
-                .height(Length::Fill)
-                .width(Length::Fill)
+            .push(
+                image::viewer(self.image.clone())
+                    .height(Length::Fill)
+                    .width(Length::Fill),
             )
             .height(Length::Fill)
             .align_items(Alignment::Center)

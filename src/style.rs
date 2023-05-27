@@ -1,21 +1,29 @@
-use iced::{Background, Color, button, container, pick_list, text_input};
+use iced::theme::Theme;
+use iced::{
+    overlay::menu,
+    widget::{button, container, pick_list, text_input},
+    Background, Color,
+};
 
 pub struct StartButton;
 
 impl button::StyleSheet for StartButton {
-    fn active(&self) -> button::Style {
-        button::Style {
+    type Style = Theme;
+
+    fn active(&self, _style: &Self::Style) -> button::Appearance {
+        button::Appearance {
             background: Some(Background::Color(Color::from_rgb8(0x00, 0x9d, 0x00))),
-            text_color: Color::from_rgb8(0xDE, 0xDE, 0xDE),
-            ..button::Style::default()
+            border_radius: 4.0.into(),
+            text_color: Color::WHITE,
+            ..button::Appearance::default()
         }
     }
 
-    fn hovered(&self) -> button::Style {
-        button::Style {
+    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+        button::Appearance {
             background: Some(Background::Color(Color::from_rgb8(0x00, 0xbd, 0x00))),
             text_color: Color::WHITE,
-            ..self.active()
+            ..self.active(style)
         }
     }
 }
@@ -23,17 +31,20 @@ impl button::StyleSheet for StartButton {
 pub struct EdgyButton;
 
 impl button::StyleSheet for EdgyButton {
-    fn active(&self) -> button::Style {
-        button::Style {
+    type Style = Theme;
+
+    fn active(&self, _style: &Self::Style) -> button::Appearance {
+        button::Appearance {
             background: Some(Background::Color(Color::from_rgb8(0xDE, 0xDE, 0xDE))),
-            ..button::Style::default()
+            border_radius: 4.0.into(),
+            ..button::Appearance::default()
         }
     }
 
-    fn hovered(&self) -> button::Style {
-        button::Style {
+    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+        button::Appearance {
             background: Some(Background::Color(Color::from_rgb8(0xFE, 0xFE, 0xFE))),
-            ..self.active()
+            ..self.active(style)
         }
     }
 }
@@ -41,54 +52,90 @@ impl button::StyleSheet for EdgyButton {
 pub struct MenuInput;
 
 impl text_input::StyleSheet for MenuInput {
-    fn active(&self) -> text_input::Style {
-        text_input::Style {
+    type Style = Theme;
+
+    fn active(&self, _style: &Self::Style) -> text_input::Appearance {
+        text_input::Appearance {
             background: Background::Color(Color::from_rgb8(0xDE, 0xDE, 0xDE)),
-            ..text_input::Style::default()
+            border_radius: 4.0.into(),
+            border_width: 1.0,
+            border_color: Color::TRANSPARENT,
+            icon_color: Color::TRANSPARENT,
         }
     }
 
-    fn focused(&self) -> text_input::Style {
-        text_input::Style {
+    fn hovered(&self, style: &Self::Style) -> text_input::Appearance {
+        text_input::Appearance {
             background: Background::Color(Color::from_rgb8(0xFE, 0xFE, 0xFE)),
-            ..self.active()
+            ..self.active(style)
         }
     }
 
-    fn placeholder_color(&self) -> Color {
-        Color::from_rgb8(0xA0, 0xA0, 0xA0)
+    fn focused(&self, style: &Self::Style) -> text_input::Appearance {
+        self.hovered(style)
     }
 
-    fn value_color(&self) -> Color {
-        Color::from_rgb8(0x20, 0x20, 0x20)
+    fn placeholder_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb8(0xAE, 0xAE, 0xAE)
     }
 
-    fn selection_color(&self) -> Color {
-        Color::from_rgb8(0xDA, 0xDA, 0xDA)
+    fn value_color(&self, _style: &Self::Style) -> Color {
+        Color::BLACK
+    }
+
+    fn selection_color(&self, _style: &Self::Style) -> Color {
+        Color::from_rgb8(0xAE, 0xAE, 0xAE)
+    }
+
+    fn disabled(&self, style: &Self::Style) -> text_input::Appearance {
+        text_input::Appearance {
+            background: Background::Color(Color::BLACK),
+            ..self.active(style)
+        }
+    }
+
+    fn disabled_color(&self, style: &Self::Style) -> Color {
+        self.placeholder_color(style)
     }
 }
 
 pub struct MenuPickList;
 
 impl pick_list::StyleSheet for MenuPickList {
-    fn menu(&self) -> pick_list::Menu {
-        pick_list::Menu {
-            background: Background::Color(Color::from_rgb8(0xFE, 0xFE, 0xFE)),
-            ..pick_list::Menu::default()
-        }
-    }
+    type Style = Theme;
 
-    fn active(&self) -> pick_list::Style {
-        pick_list::Style {
+    fn active(&self, _style: &Self::Style) -> pick_list::Appearance {
+        pick_list::Appearance {
+            text_color: Color::BLACK,
             background: Background::Color(Color::from_rgb8(0xDE, 0xDE, 0xDE)),
-            ..pick_list::Style::default()
+            placeholder_color: Color::BLACK,
+            handle_color: Color::BLACK,
+            border_radius: 0.0.into(),
+            border_width: 0.0,
+            border_color: Color::TRANSPARENT,
         }
     }
 
-    fn hovered(&self) -> pick_list::Style {
-        pick_list::Style {
-            background: Background::Color(Color::from_rgb8(0xFE, 0xFE, 0xFE)),
-            ..self.active()
+    fn hovered(&self, style: &Self::Style) -> pick_list::Appearance {
+        pick_list::Appearance {
+            background: Background::Color(Color::from_rgb8(0xDE, 0xDE, 0xDE)),
+            ..self.active(style)
+        }
+    }
+}
+
+impl menu::StyleSheet for MenuPickList {
+    type Style = Theme;
+
+    fn appearance(&self, _style: &Self::Style) -> menu::Appearance {
+        menu::Appearance {
+            text_color: Color::BLACK,
+            background: Background::Color(Color::from_rgb8(0xDE, 0xDE, 0xDE)),
+            selected_text_color: Color::BLACK,
+            selected_background: Background::Color(Color::from_rgb8(0xFE, 0xFE, 0xFE)),
+            border_radius: 0.0.into(),
+            border_width: 1.0,
+            border_color: Color::WHITE,
         }
     }
 }
@@ -96,17 +143,19 @@ impl pick_list::StyleSheet for MenuPickList {
 pub struct IconButton;
 
 impl button::StyleSheet for IconButton {
-    fn active(&self) -> button::Style {
-        button::Style {
-            background: Some(Background::Color(Color::from_rgb8(0x90, 0x90, 0x90))),
-            ..button::Style::default()
+    type Style = Theme;
+
+    fn active(&self, _style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            ..button::Appearance::default()
         }
     }
 
-    fn hovered(&self) -> button::Style {
-        button::Style {
-            background: Some(Background::Color(Color::from_rgb8(0xde, 0xde, 0xde))),
-            ..self.active()
+    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            background: Some(Background::Color(Color::from_rgb8(0x2e, 0x2e, 0x2e))),
+            border_radius: 8.0,
+            ..self.active(style)
         }
     }
 }
@@ -114,8 +163,10 @@ impl button::StyleSheet for IconButton {
 pub struct BackContainer;
 
 impl container::StyleSheet for BackContainer {
-    fn style(&self) -> container::Style {
-        container::Style {
+    type Style = Theme;
+
+    fn appearance(&self, _style: &Self::Style) -> container::Appearance {
+        container::Appearance {
             background: Color::from_rgb(
                 0x1e as f32 / 255.0,
                 0x1e as f32 / 255.0,
@@ -123,7 +174,7 @@ impl container::StyleSheet for BackContainer {
             )
             .into(),
             text_color: Color::WHITE.into(),
-            ..container::Style::default()
+            ..container::Appearance::default()
         }
     }
 }
